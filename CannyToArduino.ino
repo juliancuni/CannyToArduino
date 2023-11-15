@@ -32,11 +32,11 @@ void loop() {
         sum += readings[i];
       }
       float averageRpm = sum / 10;
-      Serial.print(Mesatarja: );
+      Serial.print("Mesatarja: ");
       Serial.println(averageRpm);
       // Convert RPM to Frequency (Hz)
       float frequencyHz = averageRpm / 60.0;
-      Serial.print(Freq: );
+      Serial.print("Freq: ");
       Serial.println(frequencyHz);
       // Update Timer1 to match the new pulse rate
       long intervalMicroseconds = (long)(1000000.0 / (frequencyHz * 4.0));
@@ -58,5 +58,5 @@ void timerISR() {
   static bool outputState = false;
 
   outputState = !outputState;
-  digitalWrite(PWM_PIN, outputState); // Toggle PWM pin
+  digitalWrite(3, outputState); // Toggle PWM pin
 }
