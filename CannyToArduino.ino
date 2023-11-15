@@ -1,20 +1,9 @@
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SH110X.h>
-
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-
-// SH110X_WHITE
-#define i2c_Address 0x3c
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define OLED_RESET -1
-Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+#include <TimerOne.h>
 
 const int baudRate = 9600;
-const int interval = 50;     // Change to 100 milliseconds
-const int numReadings = 10;  // Change to 10
+const int interval = 50;     
+const int numReadings = 10;  
 
 unsigned long previousMillis = 0;
 int readings[numReadings];
@@ -24,50 +13,34 @@ int average = 0;
 
 void setup() {
   Serial.begin(baudRate);
-
-  // initialize with the I2C address specified above
-  display.begin(i2c_Address, OLED_RESET);
-  display.display();
-  delay(20);
-  display.clearDisplay();
+  Timer1.initialize();  // Initialize Timer1
+  Timer1.attachInterrupt(timerISR);
 }
 
 void loop() {
   unsigned long currentMillis = millis();
-
   if (currentMillis - previousMillis >= interval) {
-    // save the reading and increment the index
     int reading = readSerialInt();
     readings[index] = reading;
     index++;
     previousMillis = currentMillis;
+    Serial.print("Nr. Live: ");
+    Serial.println(reading);
     if (index >= 10) {
       int sum = 0;
       for (int i = 0; i < 10; i++) {
         sum += readings[i];
       }
       float averageRpm = sum / 10;
+      Serial.print(Mesatarja: );
       Serial.println(averageRpm);
       // Convert RPM to Frequency (Hz)
       float frequencyHz = averageRpm / 60.0;
-      // Display the sum and average on the OLED display
+      Serial.print(Freq: );
+      Serial.println(frequencyHz);
       // Update Timer1 to match the new pulse rate
       long intervalMicroseconds = (long)(1000000.0 / (frequencyHz * 4.0));
-      // Timer1.setPeriod(intervalMicroseconds);
-      display.clearDisplay();
-      display.print("Sum: ");
-      display.println(sum);
-      display.print("Average Rpm: ");
-      display.println(averageRpm);
-      display.print("Freq: ");
-      display.println(frequencyHz);
-      // display.print("Free Memory: ");
-      // display.println(getFreeHeap());
-      display.display();
-
-      // for (int i = 0; i < 10; i++) {
-      //   incomingData[i] = 0;
-      // }
+      Timer1.setPeriod(intervalMicroseconds);
       memset(readings, 0, sizeof(readings));
       index = 0;
     }
@@ -78,4 +51,12 @@ int readSerialInt() {
   int lowByte = Serial.read();
   int highByte = Serial.read();
   return (highByte << 8) | lowByte;
+}
+
+// Timer Interrupt Service Routine (ISR)
+void timerISR() {
+  static bool outputState = false;
+
+  outputState = !outputState;
+  digitalWrite(PWM_PIN, outputState); // Toggle PWM pin
 }
